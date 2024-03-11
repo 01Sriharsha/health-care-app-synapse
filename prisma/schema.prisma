@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DOCTOR
+  PATIENT
+}
+
+model Admin {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+  role     Role   @default(ADMIN)
+}
+
+model Doctor {
+  id           String        @id @default(uuid())
+  firstname    String
+  lastname     String
+  email        String        @unique
+  phone        String        @unique
+  specialty    String
+  city         String
+  workingHours String
+  certificate  String
+  avatar       String?
+  role         Role          @default(DOCTOR)
+  reviews      Review[]
+  appointments Appointment[]
+  videoCall    VideoCall[]
+}
+
+model Patient {
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  phone        String        @unique
+  avatar       String?
+  city         String
+  role         Role          @default(PATIENT)
+  symptoms     Symptom[]
+  appointments Appointment[]
+  videoCall    VideoCall[]
+  reviews      Review[]
+}
+
+model VideoCall {
+  id          String   @id @default(uuid())
+  doctorId    String
+  patientId   String
+  scheduledAt DateTime
+  duration    Int // Duration in minutes
+  doctor      Doctor   @relation(fields: [doctorId], references: [id])
+  patient     Patient  @relation(fields: [patientId], references: [id])
+}
+
+model Appointment {
+  id           String        @id @default(uuid())
+  doctorId     String
+  patientId    String
+  scheduledAt  DateTime
+  status       String
+  doctor       Doctor        @relation(fields: [doctorId], references: [id])
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  prescription Prescription?
+}
+
+model Symptom {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  patients    Patient[]
+}
+
+model Review {
+  id        String  @id @default(uuid())
+  doctorId  String
+  patientId String
+  rating    Int // 1 to 5
+  comment   String?
+  doctor    Doctor  @relation(fields: [doctorId], references: [id])
+  patient   Patient @relation(fields: [patientId], references: [id])
+}
+
+model Prescription {
+  id            String      @id @default(uuid())
+  appointmentId String      @unique
+  details       String
+  prescribedAt  DateTime
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+}

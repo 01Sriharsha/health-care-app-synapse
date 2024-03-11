@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Doctor {
+  id           String        @id @default(uuid()) @map("_id") @db.ObjectId
+  name         String
+  email        String        @unique
+  phone        String        @unique
+  specialty    String
+  avatar       String?
+  reviews      Review[]
+  appointments Appointment[]
+  videoCall    VideoCall[]
+}
+
+model Patient {
+  id           String        @id @default(uuid()) @map("_id") @db.ObjectId
+  name         String
+  email        String        @unique
+  phone        String        @unique
+  avatar       String?
+  symptomIds   String[]
+  symptoms     Symptom[]     @relation(fields: [symptomIds], references: [id])
+  appointments Appointment[]
+  videoCall    VideoCall[]
+  reviews      Review[]
+}
+
+model VideoCall {
+  id          String   @id @default(uuid()) @map("_id")
+  doctorId    String   @db.ObjectId
+  patientId   String   @db.ObjectId
+  scheduledAt DateTime
+  duration    Int // Duration in minutes
+  doctor      Doctor   @relation(fields: [doctorId], references: [id])
+  patient     Patient  @relation(fields: [patientId], references: [id])
+}
+
+model Appointment {
+  id           String        @id @default(uuid()) @map("_id")
+  doctorId     String        @db.ObjectId
+  patientId    String        @db.ObjectId
+  scheduledAt  DateTime
+  status       String // e.g., "Scheduled", "Completed", "Cancelled"
+  doctor       Doctor        @relation(fields: [doctorId], references: [id])
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  prescription Prescription?
+}
+
+model Symptom {
+  id          String    @id @default(uuid()) @map("_id")
+  name        String
+  description String?
+  patientIds  String[]  @db.ObjectId
+  patients    Patient[] @relation(fields: [patientIds], references: [id])
+}
+
+model Review {
+  id        String  @id @default(uuid()) @map("_id")
+  doctorId  String  @db.ObjectId
+  patientId String  @db.ObjectId
+  rating    Int // 1 to 5
+  comment   String?
+  doctor    Doctor  @relation(fields: [doctorId], references: [id])
+  patient   Patient @relation(fields: [patientId], references: [id])
+}
+
+model Prescription {
+  id            String      @id @default(uuid()) @map("_id")
+  appointmentId String      @unique
+  details       String
+  prescribedAt  DateTime
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+}
